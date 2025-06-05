@@ -43,12 +43,16 @@
         <sling.password>admin</sling.password>
         <vault.user>admin</vault.user>
         <vault.password>admin</vault.password>
-        <core.wcm.components.version>2.9.0</core.wcm.components.version>
+        <frontend-maven-plugin.version>1.12.0</frontend-maven-plugin.version>
+        <core.wcm.components.version>2.23.4</core.wcm.components.version>
         <com.adobe.acs.commons.version>4.7.2</com.adobe.acs.commons.version>
         
-        <bnd.version>5.0.0</bnd.version>
+        <bnd.version>5.1.2</bnd.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <aem.sdk.api>2025.5.21005.20250522T173058Z-250400</aem.sdk.api>
+        <aemanalyser.version>1.4.10</aemanalyser.version>
+        <componentGroupName>AEM GEEKS</componentGroupName>
     </properties>
 
     <build>
@@ -110,12 +114,20 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>3.3.0</version>
+                    <configuration>
+                        <tarLongFileMode>posix</tarLongFileMode>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <groupId>com.github.eirslett</groupId>
                     <artifactId>frontend-maven-plugin</artifactId>
-                    <version>1.7.6</version>
+                    <version>${frontend-maven-plugin.version}</version>
                     <configuration>
-                        <nodeVersion>v10.13.0</nodeVersion>
-                        <npmVersion>6.9.0</npmVersion>
+                        <nodeVersion>v16.17.0</nodeVersion>
+                        <npmVersion>8.15.0</npmVersion>
                     </configuration>
                     <executions>
                         <execution>
@@ -125,10 +137,13 @@
                             </goals>
                         </execution>
                         <execution>
-                            <id>npm install</id>
+                            <id>npm ci</id>
                             <goals>
                                 <goal>npm</goal>
                             </goals>
+                            <configuration>
+                                <arguments>ci</arguments>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
@@ -156,20 +171,12 @@
                                 <goal>bnd-process</goal>
                             </goals>
                             <configuration>
-                                <bnd><![CDATA[
-Bundle-Category: ${AEM GEEKS}
-
-# export all versioned packages except for conditional ones (https://github.com/bndtools/bnd/issues/3721#issuecomment-579026778)
--exportcontents: ${removeall;${packages;VERSIONED};${packages;CONDITIONAL}}
-
-# reproducible builds (https://github.com/bndtools/bnd/issues/3521)
--noextraheaders: true
--snapshot: SNAPSHOT
-
-Bundle-DocURL:
--plugin org.apache.sling.caconfig.bndplugin.ConfigurationClassScannerPlugin
--plugin org.apache.sling.bnd.models.ModelsScannerPlugin
-                                ]]></bnd>
+                                <bnd>
+                                    <![CDATA[ Bundle-Category: ${componentGroupName} export all versioned packages except for conditional ones
+                                    (https://github.com/bndtools/bnd/issues/3721#issuecomment-579026778) -exportcontents: ${removeall;${packages;VERSIONED};${packages;CONDITIONAL}}
+                                    # reproducible builds (https://github.com/bndtools/bnd/issues/3521) -noextraheaders: true -snapshot: SNAPSHOT Bundle-DocURL: -plugin
+                                    org.apache.sling.caconfig.bndplugin.ConfigurationClassScannerPlugin -plugin org.apache.sling.bnd.models.ModelsScannerPlugin ]]>
+                                </bnd>
                             </configuration>
                         </execution>
                     </executions>
@@ -183,6 +190,11 @@ Bundle-DocURL:
                             <groupId>org.apache.sling</groupId>
                             <artifactId>org.apache.sling.bnd.models</artifactId>
                             <version>1.0.0</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.sling</groupId>
+                            <artifactId>scriptingbundle-maven-plugin</artifactId>
+                            <version>0.5.0</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -244,7 +256,7 @@ Bundle-DocURL:
                 <plugin>
                     <groupId>org.apache.sling</groupId>
                     <artifactId>htl-maven-plugin</artifactId>
-                    <version>1.3.4-1.4.0</version>
+                    <version>2.0.2-1.4.0</version>
                     <configuration>
                         <failOnWarnings>true</failOnWarnings>
                     </configuration>
@@ -253,10 +265,33 @@ Bundle-DocURL:
                 <plugin>
                     <groupId>org.apache.jackrabbit</groupId>
                     <artifactId>filevault-package-maven-plugin</artifactId>
-                    <version>1.0.3</version>
+                    <extensions>true</extensions>
+                    <version>1.1.6</version>
                     <configuration>
                         <filterSource>src/main/content/META-INF/vault/filter.xml</filterSource>
+                        <validatorsSettings>
+                            <jackrabbit-nodetypes>
+                                <options>
+                                    <!--  use the nodetypes and namespaces from the aem-nodetypes.jar provided in the plugin dependencies  -->
+                                    <cnds>tccl:aem.cnd</cnds>
+                                </options>
+                            </jackrabbit-nodetypes>
+                        </validatorsSettings>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>biz.netcentric.aem</groupId>
+                            <artifactId>aem-nodetypes</artifactId>
+                            <version>6.5.7.0</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <!--  AEM Analyser Plugin  -->
+                <plugin>
+                    <groupId>com.adobe.aem</groupId>
+                    <artifactId>aemanalyser-maven-plugin</artifactId>
+                    <version>${aemanalyser.version}</version>
+                    <extensions>true</extensions>
                 </plugin>
                 <!-- Content Package Plugin -->
                 <plugin>
@@ -734,20 +769,20 @@ Bundle-DocURL:
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
-                <version>5.4.1</version>
+                <version>5.13.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>2.25.1</version>
+                <version>4.1.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-junit-jupiter</artifactId>
-                <version>2.25.1</version>
+                <version>4.1.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -759,7 +794,7 @@ Bundle-DocURL:
             <dependency>
                 <groupId>io.wcm</groupId>
                 <artifactId>io.wcm.testing.aem-mock.junit5</artifactId>
-                <version>2.5.2</version>
+                <version>5.6.10</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

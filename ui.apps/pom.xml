@@ -51,7 +51,7 @@
                 <configuration>
                     <group>com.aem.geeks</group>
                     <name>aemgeeks.ui.apps</name>
-                    <packageType>application</packageType>
+                    <packageType>mixed</packageType>
                     <accessControlHandling>merge</accessControlHandling>
                     <properties>
                         <cloudManagerTarget>none</cloudManagerTarget>
@@ -142,7 +142,6 @@
             <artifactId>uber-jar</artifactId>
             <classifier>apis</classifier>
         </dependency>
-
         <dependency>
             <groupId>javax.jcr</groupId>
             <artifactId>jcr</artifactId>
@@ -167,7 +166,7 @@
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.scripting.sightly.runtime</artifactId>
-            <version>1.2.0-1.4.0</version>
+            <version>1.2.4-1.4.0</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
